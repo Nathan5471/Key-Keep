@@ -29,6 +29,14 @@ def get_websites():
                 unwanted_text = "Website: "
                 print(line.replace(unwanted_text, ""))
 
+
 def get_login():
+    website = input("What website do you want your login information from?: ")
     with open("Passwords.txt", "r") as file:
-        
+        lines = file.readlines()
+        num_lines = len(lines)
+        for i in range(num_lines):
+            line = lines[i]
+            if website in line:
+                print(lines[i + 1])
+                print(lines[i + 2])
