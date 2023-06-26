@@ -3,31 +3,39 @@ from Password_Generator import *
 
 def generate_login():
     website = input("What is the website you are creating a login for?: ")
-    username = input("What is the username you are using for this login?: ")
-    password_option = input("Do you want to have a password generated? y or n: ")
-    if password_option == "n":
-        password = input("What is the password you are using: ")
-        with open("Passwords.txt", "a") as file:
-            file.write("Website: " + website + "\n")
-            file.write("Username: " + username + "\n")
-            file.write("Password: " + password + "\n" + "\n")
+    with open("Passwords.txt", "r") as file:
+        if website in file.read():
+            login_exists = True
+        else:
+            login_exists = False
+    if not login_exists:
+        username = input("What is the username you are using for this login?: ")
+        password_option = input("Do you want to have a password generated? y or n: ")
+        if password_option == "n":
+            password = input("What is the password you are using: ")
+            with open("Passwords.txt", "a") as file:
+                file.write("Website: " + website + "\n")
+                file.write("Username: " + username + "\n")
+                file.write("Password: " + password + "\n" + "\n")
+        else:
+            password = generate_password()
+            print(password)
+            done = True
+            while done:
+                good_password = input("Is this password okay? y or n: ")
+                if good_password == "y":
+                    with open("Passwords.txt", "a") as file:
+                        file.write("Website: " + website + "\n")
+                        file.write("Username: " + username + "\n")
+                        file.write("Password: " + password + "\n" + "\n")
+                    done = False
+                elif good_password == "n":
+                    password = generate_password()
+                    print(password)
+                else:
+                    good_password = input("Please input y or n: ")
     else:
-        password = generate_password()
-        print(password)
-        done = True
-        while done:
-            good_password = input("Is this password okay? y or n: ")
-            if good_password == "y":
-                with open("Passwords.txt", "a") as file:
-                    file.write("Website: " + website + "\n")
-                    file.write("Username: " + username + "\n")
-                    file.write("Password: " + password + "\n" + "\n")
-                done = False
-            elif good_password == "n":
-                password = generate_password()
-                print(password)
-            else:
-                good_password = input("Please input y or n: ")
+        print("A login already exist for the website")
 
 
 def get_websites():
