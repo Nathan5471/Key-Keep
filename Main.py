@@ -1,6 +1,141 @@
 from Password_Generator import *
 
 
+logged_in = False
+
+
+def create_account():
+    if not logged_in:
+        with open("Passwords.txt", "r") as file:
+            lines = file.readlines()
+            num_lines = len(lines)
+            for i in range(num_lines):
+                line = lines[i]
+                if "User:" in line:
+                    user = lines[i + 1]
+        if user == "\n":
+            username = input("What do you want your username to be?: ")
+            password = input("What do you want your password to be?: ")
+            with open("Passwords.txt", "r") as file:
+                lines = file.readlines()
+                num_lines = len(lines)
+                for i in range(num_lines):
+                    line = lines[i]
+                    if "User:" in line:
+                        lines.insert(
+                            i + 1, "Username: " + username + "\nPassword: " + password
+                        )
+                    break
+            with open("Passwords.txt", "w") as file:
+                file.writelines(lines)
+        else:
+            print("There is already an account created, please login")
+    else:
+        print("You are already logged in")
+
+
+def login():
+    global logged_in
+    if not logged_in:
+        username = input("What is your username?: ")
+        with open("Passwords.txt", "r") as file:
+            lines = file.readlines()
+            num_lines = len(lines)
+            for i in range(num_lines):
+                line = lines[i]
+                if "User:" in line:
+                    user = lines[i + 1]
+                    user = user.replace("Username: ", "")
+                    user = user.replace("\n", "")
+        if username == user:
+            input_password = input("What is the password for your accout?: ")
+            with open("Passwords.txt", "r") as file:
+                lines = file.readlines()
+                num_lines = len(lines)
+                for i in range(num_lines):
+                    line = lines[i]
+                    if "User:" in line:
+                        password = lines[i + 2]
+                        password = password.replace("Password: ", "")
+                        password = password.replace("\n", "")
+            if password == input_password:
+                logged_in = True
+                print("You have succesfully logged in!")
+            else:
+                print("The password you inputed is not correct")
+                correct = False
+                attempts = 1
+                while not correct and attempts <= 10:
+                    input_password = input("What is the password for your accout?: ")
+                    if password == input_password:
+                        logged_in = True
+                        print("You have succesfully logged in!")
+                        correct = True
+                    else:
+                        attempts += 1
+                        print("The password you inputed is not correct")
+    else:
+        print("You are already logged in")
+
+
+def get_account():
+    if logged_in:
+        with open("Passwords.txt", "r") as file:
+            lines = file.readlines()
+            num_lines = len(lines)
+            for i in range(num_lines):
+                line = lines[i]
+                if "User:" in line:
+                    print(lines[i + 1])
+                    print(lines[i + 2])
+    else:
+        print("Please login or create an account to use this function")
+
+
+def change_username():
+    if logged_in:
+        new_user = input("What do you want your username to be?")
+        with open("Passwords.txt", "r") as file:
+            lines = file.readlines()
+            num_lines = len(lines)
+            for i in range(num_lines):
+                line = lines[i]
+                if "User:" in line:
+                    username = lines[i + 1]
+        with open("Passwords.txt", "r") as file:
+            txt_file = file.read()
+
+        update_username = txt_file.replace(
+            username,
+            "Username: " + new_user + "\n",
+        )
+
+        with open("Passwords.txt", "w") as file:
+            file.write(update_username)
+
+
+def change_password():
+    if logged_in:
+        new_password = input("What do you want your password to be?")
+        with open("Passwords.txt", "r") as file:
+            lines = file.readlines()
+            num_lines = len(lines)
+            for i in range(num_lines):
+                line = lines[i]
+                if "User:" in line:
+                    password = lines[i + 2]
+        with open("Passwords.txt", "r") as file:
+            txt_file = file.read()
+
+        update_password = txt_file.replace(
+            password,
+            "Password: " + new_password + "\n",
+        )
+
+        with open("Passwords.txt", "w") as file:
+            file.write(update_password)
+
+
 def generate_login():
     website = input("What is the website you are creating a login for?: ")
     with open("Passwords.txt", "r") as file:
@@ -112,13 +247,13 @@ def edit_login():
     if edit_user == "y":
         new_user = input("What do you want your new username to be?: ")
     else:
-        first_user = get_user(edit_website).replace("Username: ", "")
-        new_user = first_user.replace("\n", "")
+        new_user = get_user(edit_website).replace("Username: ", "")
+        new_user = new_user.replace("\n", "")
     if edit_password == "y":
         new_password = input("what do you want your new password to be?: ")
     else:
-        first_password = get_password(edit_website).replace("Password: ", "")
-        new_password = first_password.replace("\n", "")
+        new_password = get_password(edit_website).replace("Password: ", "")
+        new_password = new_password.replace("\n", "")
     login_info = get_login("true", edit_website)
     with open("Passwords.txt", "r") as file:
         logins = file.read()
