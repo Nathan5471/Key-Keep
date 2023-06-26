@@ -59,6 +59,26 @@ def get_login(edit="", website=""):
                     print(lines[i + 2])
 
 
+def get_user(website):
+    with open("Passwords.txt", "r") as file:
+        lines = file.readlines()
+        num_lines = len(lines)
+        for i in range(num_lines):
+            line = lines[i]
+            if website in line:
+                return lines[i + 1]
+
+
+def get_password(website):
+    with open("Passwords.txt", "r") as file:
+        lines = file.readlines()
+        num_lines = len(lines)
+        for i in range(num_lines):
+            line = lines[i]
+            if website in line:
+                return lines[i + 2]
+
+
 def edit_login():
     edit_website = input(
         "What website do you want to change the login information for?: "
@@ -83,8 +103,14 @@ def edit_login():
                 valid_response = True
     if edit_user == "y":
         new_user = input("What do you want your new username to be?: ")
+    else:
+        first_user = get_user(edit_website).replace("Username: ", "")
+        new_user = first_user.replace("\n", "")
     if edit_password == "y":
         new_password = input("what do you want your new password to be?: ")
+    else:
+        first_password = get_password(edit_website).replace("Password: ", "")
+        new_password = first_password.replace("\n", "")
     login_info = get_login("true", edit_website)
     with open("Passwords.txt", "r") as file:
         logins = file.read()
