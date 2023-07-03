@@ -11,14 +11,17 @@ logged_in = False
 
 def create_account():
     if not logged_in:
-        if os.path.exists("password_manager.db") != True:
+        if not os.path.exists("password_manager.db"):
             con = sqlite3.connect("password_manager.db")
+            con1 = sqlite3.connect("key_manager.db")
             cur = con.cursor()
-            cur.execute(
-                "CREATE TABLE login(username, password, encryption_key, iv, account)"
-            )
+            cur1 = con1.cursor()
+            cur.execute("CREATE TABLE login(username, password, account)")
+            cur1.execute("CREATE TABLE keys(encryption_key, iv, id)")
             con.commit()
+            con1.commit()
             con.close()
+            con1.close()
             username = input("What do you want your username to be?: ")
             password = input("What do you want your password to be?: ")
             key = get_random_bytes(32)
@@ -26,15 +29,23 @@ def create_account():
             padded_password = pad(password.encode(), AES.block_size)
             encrypted_password = cipher.encrypt(padded_password)
             con = sqlite3.connect("password_manager.db")
+            con1 = sqlite3.connect("key_manager.db")
             cur = con.cursor()
+            cur1 = con1.cursor()
             iv = cipher.iv
-            login_data = (username, encrypted_password, key, iv, 1)
+            login_data = (username, encrypted_password, 1)
+            key_data = (key, iv, 0)
             cur.execute(
-                "INSERT INTO login (username, password, encryption_key, iv, account) VALUES (?, ?, ?, ?, ?)",
+                "INSERT INTO login (username, password, account) VALUES (?, ?, ?)",
                 login_data,
             )
+            cur1.execute(
+                "INSERT INTO keys (encryption_key, iv, id) VALUES (?, ?, ?)", key_data
+            )
             con.commit()
+            con1.commit()
             con.close()
+            con1.close()
         else:
             print("There is already an account created")
     else:
@@ -47,15 +58,21 @@ def login():
         if os.path.exists("password_manager.db"):
             username = input("What is your username?: ")
             con = sqlite3.connect("password_manager.db")
+            con1 = sqlite3.connect("key_manager.db")
             cur = con.cursor()
+            cur1 = con1.cursor()
             cur.execute("SELECT * FROM login")
+            cur1.execute("SELECT * FROM keys WHERE id = 0")
             rows = cur.fetchall()
             for row in rows:
                 user = row[0]
                 password = row[1]
-                key = row[2]
-                iv = row[3]
+            rows = cur1.fetchall()
+            for row in rows:
+                key = row[0]
+                iv = row[1]
             con.close
+            con1.close
             if username == user:
                 input_password = input("What is the password for your accout?: ")
                 decipher = AES.new(key, AES.MODE_CBC, iv=iv)
@@ -89,15 +106,21 @@ def login():
 def get_account():
     if logged_in:
         con = sqlite3.connect("password_manager.db")
+        con1 = sqlite3.connect("key_manager.db")
         cur = con.cursor()
+        cur1 = con1.cursor()
         cur.execute("SELECT * FROM login")
+        cur1.execute("SELECT * FROM keys")
         rows = cur.fetchall()
         for row in rows:
             username = row[0]
             password = row[1]
-            key = row[2]
-            iv = row[3]
+        rows = cur1.fetchall()
+        for row in rows:
+            key = row[0]
+            iv = row[1]
         con.close
+        con1.close
         decipher = AES.new(key, AES.MODE_CBC, iv=iv)
         password = unpad((decipher.decrypt(password)), AES.block_size).decode()
         print("Username: " + username + "\nPassword: " + password)
@@ -110,7 +133,7 @@ def change_username():
         new_user = input("What do you want your username to be?")
         con = sqlite3.connect("password_manager.db")
         cur = con.cursor()
-        cur.execute("UPDATE login SET username = ? WHERE account = ?", (new_user, 1))
+        cur.execute("UPDATE login SET username = ? WHERE account = ?", (new_user, 0))
         con.commit()
         con.close()
     else:
@@ -120,18 +143,21 @@ def change_username():
 def change_password():
     if logged_in:
         new_password = input("What do you want your password to be?")
-        con = sqlite3.connect("password_manager.db")
+        con = sqlite3.connect("key_manager.db")
         cur = con.cursor()
-        cur.execute("SELECT * FROM login")
+        cur.execute("SELECT * FROM keys")
         rows = cur.fetchall()
         for row in rows:
-            key = row[2]
-            iv = row[3]
+            key = row[0]
+            iv = row[1]
+        con.close()
         cipher = AES.new(key, AES.MODE_CBC, iv=iv)
         padded_password = pad(new_password.encode(), AES.block_size)
         encrypted_password = cipher.encrypt(padded_password)
+        con = sqlite3.connect("password_manager.db")
+        cur = con.cursor()
         cur.execute(
-            "UPDATE login SET password = ? WHERE account = ?", (encrypted_password, 1)
+            "UPDATE login SET password = ? WHERE account = ?", (encrypted_password, 0)
         )
         con.commit()
         con.close()
@@ -143,9 +169,11 @@ def generate_login():
     if logged_in:
         website = input("What is the website you are creating a login for?: ")
         con = sqlite3.connect("password_manager.db")
+        con1 = sqlite3.connect("key_manager.db")
         cur = con.cursor()
+        cur1 = con1.cursor()
         cur.execute(
-            "CREATE TABLE IF NOT EXISTS passwords (website, username, password)"
+            "CREATE TABLE IF NOT EXISTS passwords (website, username, password, id)"
         )
         con.commit()
         cur.execute("SELECT * FROM passwords WHERE website = ?", (website,))
@@ -162,43 +190,71 @@ def generate_login():
             password_option = input(
                 "Do you want to have a password generated? y or n: "
             )
+            con = sqlite3.connect("key_manager.db")
+            cur = con.cursor()
+            cur.execute("SELECT id FROM keys")
+            ids = cur.fetchall()
+            id = 0
+            for i in ids:
+                id += 1
+            con.close()
             if password_option == "n":
+                con = sqlite3.connect("password_manager.db")
+                con1 = sqlite3.connect("key_manager.db")
+                cur = con.cursor()
+                cur1 = con1.cursor()
                 password = input("What is the password you are using: ")
-                cur.execute("SELECT * FROM login")
-                rows = cur.fetchall()
-                for row in rows:
-                    key = row[2]
-                    iv = row[3]
-                cipher = AES.new(key, AES.MODE_CBC, iv=iv)
+                key = get_random_bytes(32)
+                cipher = AES.new(key, AES.MODE_CBC)
+                iv = cipher.iv
                 padded_password = pad(password.encode(), AES.block_size)
                 encrypted_password = cipher.encrypt(padded_password)
                 cur.execute(
-                    "INSERT INTO passwords (website, username, password) VALUES (?, ?, ?)",
-                    (website, username, encrypted_password),
+                    "INSERT INTO passwords (website, username, password, id) VALUES (?, ?, ?, ?)",
+                    (website, username, encrypted_password, id),
+                )
+                cur1.execute(
+                    "INSERT INTO keys (encryption_key, iv, id) VALUES (?, ?, ?)",
+                    (key, iv, id),
                 )
                 con.commit()
+                con1.commit()
                 con.close()
+                con1.close()
             else:
                 password = generate_password()
                 print(password)
                 done = True
                 while done:
+                    con = sqlite3.connect("key_manager.db")
+                    cur = con.cursor()
                     good_password = input("Is this password okay? y or n: ")
                     if good_password == "y":
-                        cur.execute("SELECT * FROM login")
+                        cur.execute("SELECT * FROM keys")
                         rows = cur.fetchall()
                         for row in rows:
-                            key = row[2]
-                            iv = row[3]
+                            key = row[0]
+                            iv = row[1]
+                        con.close()
+                        con = sqlite3.connect("password_manager.db")
+                        con1 = sqlite3.connect("key_manager.db")
+                        cur = con.cursor()
+                        cur1 = con1.cursor()
                         cipher = AES.new(key, AES.MODE_CBC, iv=iv)
                         padded_password = pad(password.encode(), AES.block_size)
                         encrypted_password = cipher.encrypt(padded_password)
                         cur.execute(
-                            "INSERT INTO passwords (website, username, password) VALUES (?, ?, ?)",
-                            (website, username, encrypted_password),
+                            "INSERT INTO passwords (website, username, password, id) VALUES (?, ?, ?, ?)",
+                            (website, username, encrypted_password, id),
+                        )
+                        cur1.execute(
+                            "INSERT INTO keys (encryption_key, iv, id) VALUES (?, ?, ?)",
+                            (key, iv, id),
                         )
                         con.commit()
+                        con1.commit()
                         con.close()
+                        con1.close()
                         done = False
                     elif good_password == "n":
                         password = generate_password()
@@ -234,11 +290,15 @@ def get_login():
         for row in rows:
             username = row[1]
             password = row[2]
-        cur.execute("SELECT * FROM login")
+            id = row[3]
+        con.close()
+        con = sqlite3.connect("key_manager.db")
+        cur = con.cursor()
+        cur.execute("SELECT * FROM keys WHERE id = ?", (id,))
         rows = cur.fetchall()
         for row in rows:
-            key = row[2]
-            iv = row[3]
+            key = row[0]
+            iv = row[1]
         con.close()
         decipher = AES.new(key, AES.MODE_CBC, iv=iv)
         password = unpad((decipher.decrypt(password)), AES.block_size).decode()
@@ -284,11 +344,17 @@ def edit_login():
             new_password = input("What do you want your new password to be?: ")
             con = sqlite3.connect("password_manager.db")
             cur = con.cursor()
-            cur.execute("SELECT * FROM login")
+            cur.execute("SELECT * FROM passwords WHERE website = ?", (website,))
             rows = cur.fetchall()
             for row in rows:
-                key = row[2]
-                iv = row[3]
+                id = row[3]
+            con = sqlite3.connect("key_manager.db")
+            cur = con.cursor()
+            cur.execute("SELECT * FROM keys WHERE id = ?", (id,))
+            rows = cur.fetchall()
+            for row in rows:
+                key = row[0]
+                iv = row[1]
             cipher = AES.new(key, AES.MODE_CBC, iv=iv)
             padded_password = pad(new_password.encode(), AES.block_size)
             encrypted_password = cipher.encrypt(padded_password)
