@@ -28,7 +28,7 @@ def create_account(username, password):
         cur = con.cursor()
         cur1 = con1.cursor()
         iv = cipher.iv
-        login_data = (username, encrypted_password, 1)
+        login_data = (username, encrypted_password, 0)
         key_data = (key, iv, 0)
         cur.execute(
             "INSERT INTO login (username, password, id) VALUES (?, ?, ?)",
@@ -47,7 +47,7 @@ def create_account(username, password):
 
 
 def login(username, input_password):
-    if os.path.exists("password_manager.db"):
+    if os.path.exists("key_manager.db"):
         con = sqlite3.connect("password_manager.db")
         con1 = sqlite3.connect("key_manager.db")
         cur = con.cursor()
@@ -73,7 +73,7 @@ def login(username, input_password):
             return "Username or password is incorrect"
 
     else:
-        print("You need to create an account")
+        return "You need to create an account"
 
 
 def get_account():
@@ -109,7 +109,7 @@ def change_username(new_user):
 def change_password(new_password):
     con = sqlite3.connect("key_manager.db")
     cur = con.cursor()
-    cur.execute("SELECT * FROM keys")
+    cur.execute("SELECT * FROM keys WHERE id = 0")
     rows = cur.fetchall()
     for row in rows:
         key = row[0]
@@ -214,7 +214,7 @@ def get_login(website):
 
 
 def edit_login(website, username, password):
-    con = sqlite3.connect("password_manager")
+    con = sqlite3.connect("password_manager.db")
     cur = con.cursor()
     cur.execute("SELECT * FROM passwords WHERE website = ?", (website,))
     rows = cur.fetchall()
@@ -235,13 +235,21 @@ def edit_login(website, username, password):
     con = sqlite3.connect("password_manager.db")
     cur = con.cursor()
     cur.execute(
-        "UPDATE passwords SET username = ? password = ? WHERE website = ?",
+        "UPDATE passwords SET username = ? WHERE website = ?",
         (
-            website,
             username,
-            encrypted_password,
+            website,
         ),
     )
+    cur.execute(
+        "UPDATE passwords SET password = ? WHERE website = ?",
+        (
+            encrypted_password,
+            website,
+        ),
+    ),
+    con.commit()
+    con.close()
 
 
 window = Tk()
@@ -294,11 +302,25 @@ def go_to_add():
 
 def go_to_get_login():
     main_page.pack_forget()
+    websites = get_websites()
+    selected_option = websites[0]
+    website_dropdown["menu"].delete(0, "end")
+    for website in websites:
+        website_dropdown["menu"].add_command(
+            label=website, command=lambda value=website: selected_option.set(value)
+        )
     get_login_page.pack()
 
 
 def go_to_edit_login():
     main_page.pack_forget()
+    websites = get_websites()
+    selected_option = websites[0]
+    website_dropdown_1["menu"].delete(0, "end")
+    for website in websites:
+        website_dropdown_1["menu"].add_command(
+            label=website, command=lambda value=website: selected_option.set(value)
+        )
     edit_login_page.pack()
 
 
@@ -368,9 +390,8 @@ def add_password_1():
 def get_account_1():
     result = get_account()
     account_management_page.pack_forget()
-    details_label = Label(get_account_page, text=result)
+    details_label.config(text=result)
     details_label.pack(pady=(70, 0))
-    ok_button = Button(get_account_page, text="Ok", width=10, command=go_to_main)
     ok_button.pack(pady=(20, 0))
     get_account_page.pack()
 
@@ -385,7 +406,7 @@ def get_login_1():
 def edit_login_1():
     website = selected_option_1.get().replace("('", "")
     website = website.replace("',)", "")
-    edit_login(website, username_box_edit, password_box_edit)
+    edit_login(website, username_box_edit.get(), password_box_edit.get())
     go_to_main()
 
 
@@ -465,6 +486,8 @@ back_button = Button(account_management_page, text="Back", width=17, command=go_
 back_button.pack(pady=(20, 0))
 
 get_account_page = Frame(window)
+details_label = Label(get_account_page, text="")
+ok_button = Button(get_account_page, text="Ok", width=10, command=go_to_main)
 
 change_username_page = Frame(window)
 change_username_label = Label(change_username_page, text="Username")
@@ -534,19 +557,19 @@ back_button.pack(pady=(10, 0))
 edit_login_page = Frame(window)
 selected_option_1 = StringVar(window)
 selected_option_1.set(websites[0])
-website_dropdown = OptionMenu(edit_login_page, selected_option, *websites)
-website_dropdown.pack()
+website_dropdown_1 = OptionMenu(edit_login_page, selected_option, *websites)
+website_dropdown_1.pack(pady=(30, 0))
 new_username_label = Label(edit_login_page, text="New Username")
-new_username_label.pack()
+new_username_label.pack(pady=(10, 0))
 username_box_edit = Entry(edit_login_page)
 username_box_edit.pack()
 new_password_label = Label(edit_login_page, text="New Password")
-new_password_label.pack()
+new_password_label.pack(pady=(10, 0))
 password_box_edit = Entry(edit_login_page)
 password_box_edit.pack()
-submit_button = Button(edit_login_page, text="Submit", width=15)
-submit_button.pack()
+submit_button = Button(edit_login_page, text="Submit", command=edit_login_1, width=15)
+submit_button.pack(pady=(10, 0))
 back_button = Button(edit_login_page, text="Back", command=go_to_main, width=15)
-back_button.pack()
+back_button.pack(pady=(10, 0))
 
 window.mainloop()
