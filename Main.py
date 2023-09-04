@@ -1,6 +1,5 @@
 from tkinter import *
 from tkinter import font
-from tkinter import ttk
 from PIL import Image, ImageTk
 from Password_Manager import *
 
@@ -13,15 +12,37 @@ def button_color(event, button, color):
     button.config(bg=color)
 
 
+def loop_check_password(password, password_entry, image_list):
+    if password_entry.winfo_ismapped():
+        if password == password_entry.get():
+            pass
+        else:
+            password = password_entry.get()
+            result = check_password(password)
+            for i in range(5):
+                image = check if result[i] else x
+                image_list[i].configure(image=image)
+        window.after(
+            100,
+            lambda password=password, password_entry=password_entry, image_list=image_list: loop_check_password(
+                password, password_entry, image_list
+            ),
+        )
+
+
 def go_to_create():
     account_page.pack_forget()
     login_page.pack_forget()
+    window.geometry("350x200")
     create_page.pack()
+    window.update()
+    loop_check_password("", password_box_create, requirement_images_create)
 
 
 def go_to_login():
     account_page.pack_forget()
     create_page.pack_forget()
+    window.geometry("160x200")
     login_page.pack()
 
 
@@ -57,7 +78,7 @@ def get_account_1():
     change_username_button.place_forget()
     change_password_button.place_forget()
     account_info.configure(text=get_account())
-    account_info.place(x=0, y=30)
+    account_info.place(x=0, y=10)
 
 
 def go_change_1():
@@ -84,7 +105,10 @@ def go_add():
     if not add_password_page.winfo_ismapped():
         account_dropdown.place_forget()
         get_password_canvas.pack_forget()
+        edit_password_canvas.pack_forget()
         add_password_page.pack()
+        window.update()
+        loop_check_password("", pass_entry, requirement_images_add)
     else:
         add_password_page.pack_forget()
 
@@ -108,6 +132,17 @@ def create_account_1():
     elif result == "There is already an account created":
         error_label_1.configure(text="There is already \nan account \ncreated")
         error_button_1.configure(command=go_to_login)
+        error_page_1.place(x=20, y=60)
+    elif result == "Weak password":
+
+        def clear_label():
+            error_page_1.place_forget()
+
+        error_label_1.configure(
+            text="You need to meet \n all of the password \nrequirements",
+            font=("arial", 9),
+        )
+        error_button_1.configure(command=clear_label)
         error_page_1.place(x=20, y=60)
 
 
@@ -182,7 +217,13 @@ def add_password():
 def generate_password_1():
     length = password_len.get()
     if length.isdigit():
-        password = generate_password(int(password_len.get()))
+        if int(password_len.get()) >= 12 and int(password_len.get()) <= 36:
+            password = generate_password(int(password_len.get()))
+        else:
+            if int(password_len.get()) <= 12:
+                password = "Use a number greater than 12"
+            if int(password_len.get()) >= 36:
+                password = "Use a number less than 36"
     else:
         password = "Use Number"
     generated_password.configure(text=password)
@@ -218,9 +259,9 @@ def get_password_1():
         def get_password(website):
             login_info = get_login(website)
             top_pixel, bottom_pixel = get_visible_y_values(get_password_canvas)
-            place_y = ((top_pixel + bottom_pixel) / 2) - 45
+            place_y = ((top_pixel + bottom_pixel) / 2) - 55
             login_info_frame = Frame(
-                get_password_canvas, width=120, height=100, bg="#243f57"
+                get_password_canvas, width=130, height=100, bg="#243f57"
             )
             login_info_label = Label(
                 login_info_frame,
@@ -254,7 +295,7 @@ def get_password_1():
                 "<Leave>",
                 lambda event: button_color(event, ok_button, "#243f57"),
             )
-            ok_button.place(x=10, y=60)
+            ok_button.place(x=10, y=70)
             id = get_password_canvas.create_window(
                 185, place_y, window=login_info_frame
             )
@@ -432,6 +473,15 @@ button_font_1 = ("Arial", 12)
 label_font_1 = ("Arial", 10)
 logo = ImageTk.PhotoImage(Image.open("Assets/Logo.png"))
 logo_1 = ImageTk.PhotoImage(Image.open("Assets/Logo_1.png"))
+check = ImageTk.PhotoImage(Image.open("Assets/Check.png"))
+x = ImageTk.PhotoImage(Image.open("Assets/X.png"))
+password_requirements = [
+    "Have at least 12 characters",
+    "Have at least 1 number",
+    "Have at least 1 lowercase \nletter",
+    "Have at least 1 uppercase \nletter",
+    "Have at least 1 special \ncharacter",
+]
 
 account_page = Frame(window, width=160, height=200, bg="#0c2a44")
 logo_label_1 = Label(account_page, image=logo)
@@ -470,8 +520,8 @@ login_button.bind("<Leave>", lambda event: button_color(event, login_button, "#0
 login_button.place(x=8, y=133)
 account_page.pack()
 
-create_page = Frame(window, width=160, height=200, bg="#0c2a44")
-logo_label_2 = Label(create_page, image=logo_1)
+create_page = Frame(window, width=350, height=200, bg="#0c2a44")
+logo_label_2 = Label(create_page, image=logo)
 logo_label_2.place(x=20, y=20)
 username_label = Label(
     create_page, text="Username", bg="#0c2a44", foreground="white", font=label_font_1
@@ -503,6 +553,43 @@ create_account_submit.bind(
     "<Leave>", lambda event: button_color(event, create_account_submit, "#0c2a44")
 )
 create_account_submit.place(x=8, y=160)
+
+password_requirements_label = Label(
+    create_page,
+    text="Password Requirements",
+    bg="#0c2a44",
+    foreground="white",
+    font=("Arial", 11),
+)
+password_requirements_label.place(x=150, y=8)
+x_1, y_1, run = 175, 30, 0
+for password_requirement in password_requirements:
+    requirement_label = Label(
+        create_page,
+        text=password_requirement,
+        bg="#0c2a44",
+        foreground="white",
+        font=("Arial", 10),
+    )
+    requirement_label.place(x=x_1, y=y_1)
+    if run < 2:
+        y_1 += 20
+    else:
+        y_1 += 40
+    run += 1
+
+requirement_images_create = [
+    Label(create_page, image=x, bg="#0c2a44"),
+    Label(create_page, image=x, bg="#0c2a44"),
+    Label(create_page, image=x, bg="#0c2a44"),
+    Label(create_page, image=x, bg="#0c2a44"),
+    Label(create_page, image=x, bg="#0c2a44"),
+]
+requirement_images_create[0].place(x=157, y=34)
+requirement_images_create[1].place(x=157, y=54)
+requirement_images_create[2].place(x=157, y=74)
+requirement_images_create[3].place(x=157, y=114)
+requirement_images_create[4].place(x=157, y=154)
 
 error_page_1 = Frame(create_page, width=125, height=120, bg="#243f57")
 error_label_1 = Label(
@@ -819,54 +906,40 @@ new_pass_submit.bind(
 new_pass_submit.place(x=10, y=185)
 password_recommendations = Label(
     add_password_page,
-    text="Password Strength Reccomendations",
+    text="Password Requirements",
     bg="#3d5569",
     foreground="white",
 )
 password_recommendations.configure(
-    font=font.Font(family="arial", size=9, weight="bold")
+    font=font.Font(family="arial", size=10, weight="bold")
 )
-password_recommendations.place(x=140, y=10)
-reccomend_list_1 = Label(
-    add_password_page,
-    text="Have at least 10 characters",
-    font=("arial", 8),
-    bg="#3d5569",
-    foreground="white",
-)
-reccomend_list_1.place(x=145, y=27)
-reccomend_list_2 = Label(
-    add_password_page,
-    text="Use multiple different Character types",
-    font=("arial", 8),
-    bg="#3d5569",
-    foreground="white",
-)
-reccomend_list_2.place(x=145, y=47)
-reccomend_list_3 = Label(
-    add_password_page,
-    text="Use a different password for every website",
-    font=("arial", 8),
-    bg="#3d5569",
-    foreground="white",
-)
-reccomend_list_3.place(x=145, y=67)
-reccomend_list_4 = Label(
-    add_password_page,
-    text="Do not use common words or phrases",
-    font=("arial", 8),
-    bg="#3d5569",
-    foreground="white",
-)
-reccomend_list_4.place(x=145, y=87)
-reccomend_list_5 = Label(
-    add_password_page,
-    text="Do not share passwords over email",
-    font=("arial", 8),
-    bg="#3d5569",
-    foreground="white",
-)
-reccomend_list_5.place(x=145, y=107)
+password_recommendations.place(x=150, y=10)
+requirement_images_add = [
+    Label(add_password_page, image=x, bg="#3d5569"),
+    Label(add_password_page, image=x, bg="#3d5569"),
+    Label(add_password_page, image=x, bg="#3d5569"),
+    Label(add_password_page, image=x, bg="#3d5569"),
+    Label(add_password_page, image=x, bg="#3d5569"),
+]
+x_1, y_1, run = 170, 27, 0
+for password_requirement in password_requirements:
+    requirement_label = Label(
+        add_password_page,
+        text=password_requirement,
+        bg="#3d5569",
+        foreground="white",
+        font=("Arial", 8),
+    )
+    requirement_label.place(x=x_1, y=y_1)
+    requirement_images_add[password_requirements.index(password_requirement)].place(
+        x=(x_1 - 15), y=y_1
+    )
+    if run < 2:
+        y_1 += 15
+    else:
+        y_1 += 28
+    run += 1
+
 password_generator_label = Label(
     add_password_page,
     text="Password Generator",
@@ -892,7 +965,7 @@ gen_password = Button(
     width=14,
     bg="#3d5569",
     foreground="white",
-    command=get_password_1,
+    command=generate_password_1,
     font=("arial", 10),
 )
 gen_password.configure(activebackground="#506579", activeforeground="white")
