@@ -56,8 +56,7 @@ def logged_in():
 def account_management_dropdown():
     if not account_dropdown.winfo_ismapped():
         add_password_page.pack_forget()
-        get_password_canvas.pack_forget()
-        edit_password_canvas.pack_forget()
+        password_canvas.pack_forget()
         account_details_button.place(x=4, y=4)
         change_username_button.place(x=4, y=34)
         change_password_button.place(x=4, y=64)
@@ -104,8 +103,7 @@ def go_change_2():
 def go_add():
     if not add_password_page.winfo_ismapped():
         account_dropdown.place_forget()
-        get_password_canvas.pack_forget()
-        edit_password_canvas.pack_forget()
+        password_canvas.pack_forget()
         add_password_page.pack()
         window.update()
         loop_check_password("", pass_entry, requirement_images_add)
@@ -230,243 +228,207 @@ def generate_password_1():
     generated_password.place(x=155, y=235)
 
 
-def get_visible_y_values(canvas):
-    top_normalized, bottom_normalized = canvas.yview()
-    canvas_height = canvas.winfo_height()
-    scrollable_height = canvas_height - canvas_height / (
-        bottom_normalized - top_normalized
-    )
-
-    top_pixel = -scrollable_height * top_normalized
-    bottom_pixel = -scrollable_height * bottom_normalized + canvas_height
-
-    return top_pixel, bottom_pixel
-
-
-def get_password_1():
-    if not get_password_canvas.winfo_ismapped():
+def passwords():
+    if not password_canvas.winfo_ismapped():
         add_password_page.pack_forget()
-        edit_password_canvas.pack_forget()
         account_dropdown.place_forget()
         websites = get_websites()
         y = 25
-        buttons = []
+        labels = []
+        buttons_get = []
+        buttons_edit = []
         frames = []
 
         def on_scroll(event):
-            get_password_canvas.yview_scroll(-1 * (event.delta // 120), "units")
+            password_canvas.yview_scroll(-1 * (event.delta // 120), "units")
 
-        def get_password(website):
+        def get_password(website, i):
             login_info = get_login(website)
-            top_pixel, bottom_pixel = get_visible_y_values(get_password_canvas)
-            place_y = ((top_pixel + bottom_pixel) / 2) - 55
-            login_info_frame = Frame(
-                get_password_canvas, width=130, height=100, bg="#243f57"
-            )
+
+            def close_button_click(i, label, button):
+                labels[i].place(x=5, y=5)
+                buttons_get[i].place(x=210, y=1)
+                buttons_edit[i].place(x=90, y=1)
+                label.place_forget()
+                button.place_forget()
+
+            labels[i].place_forget()
+            buttons_get[i].place_forget()
+            buttons_edit[i].place_forget()
             login_info_label = Label(
-                login_info_frame,
+                frames[i],
                 text=login_info,
+                background="#0c2a44",
+                foreground="white",
                 font=("arial", 10),
-                bg="#243f57",
-                foreground="white",
             )
-            login_info_label.place(x=5, y=0)
-
-            def ok_button_click():
-                get_password_canvas.delete(id)
-
-            ok_button = Button(
-                login_info_frame,
-                text="Ok",
-                relief=FLAT,
-                width=10,
-                bg="#243f57",
-                foreground="white",
-                command=ok_button_click,
-                font=button_font_1,
-                activebackground="#3d5569",
-                activeforeground="white",
-            )
-            ok_button.bind(
-                "<Enter>",
-                lambda event: button_color(event, ok_button, "#3d5569"),
-            )
-            ok_button.bind(
-                "<Leave>",
-                lambda event: button_color(event, ok_button, "#243f57"),
-            )
-            ok_button.place(x=10, y=70)
-            id = get_password_canvas.create_window(
-                185, place_y, window=login_info_frame
-            )
-
-        for website in websites:
-            i = websites.index(website)
-            website_frame = Frame(
-                get_password_canvas, width=330, height=35, bg="#0c2a44"
-            )
-            frames.append(website_frame)
-            website_label = Label(
+            login_info_label.place(x=10, y=5)
+            close_button = Button(
                 frames[i],
-                text=website,
-                font=button_font_1,
-                bg="#0c2a44",
-                foreground="white",
-            )
-            website_label.place(x=5, y=5)
-            get_password_button = Button(
-                website_frame,
-                text="Get Password",
+                image=x,
+                background="#0c2a44",
                 relief=FLAT,
-                width=13,
-                height=1,
-                bg="#0c2a44",
-                foreground="white",
-                command=lambda website=website: get_password(website[0]),
-                font=button_font_1,
                 activebackground="#243f57",
-                activeforeground="white",
             )
-            buttons.append(get_password_button)
-            buttons[i].bind(
+            close_button.configure(
+                command=lambda i=i, label=login_info_label, button=close_button: close_button_click(
+                    i, label, button
+                )
+            )
+            close_button.bind(
                 "<Enter>",
-                lambda event, i=i: button_color(event, buttons[i], "#243f57"),
+                lambda event, close_button=close_button: button_color(
+                    event, close_button, "#243f57"
+                ),
             )
-            buttons[i].bind(
+            close_button.bind(
                 "<Leave>",
-                lambda event, i=i: button_color(event, buttons[i], "#0c2a44"),
+                lambda event, close_button=close_button: button_color(
+                    event, close_button, "#0c2a44"
+                ),
             )
-            buttons[i].place(x=200, y=1)
-            get_password_canvas.create_window(185, y, window=frames[i])
-            y += 50
-        get_password_canvas.update_idletasks()
-        y -= 20
-        get_password_canvas.after_idle(
-            lambda: get_password_canvas.config(scrollregion=(0, 0, 330, y))
-        )
-        get_password_canvas.bind_all("<MouseWheel>", on_scroll)
-        get_password_canvas.pack()
-    else:
-        get_password_canvas.pack_forget()
+            close_button.place(x=300, y=7)
 
+        def edit_password(website, i):
+            labels[i].place_forget()
+            buttons_get[i].place_forget()
+            buttons_edit[i].place_forget()
 
-def edit_password_1():
-    if not edit_password_canvas.winfo_ismapped():
-        add_password_page.pack_forget()
-        get_password_canvas.pack_forget()
-        account_dropdown.place_forget()
-        websites = get_websites()
-        y = 25
-        buttons = []
-        frames = []
+            def clear(event, entry):
+                if entry.get() == "Username" or entry.get() == "Password":
+                    entry.delete(0, "end")
 
-        def on_scroll(event):
-            edit_password_canvas.yview_scroll(-1 * (event.delta // 120), "units")
+            def submit_button_click(entry1, entry2, button):
+                new_info = (entry1.get(), entry2.get())
+                result = edit_login(website, new_info[0], new_info[1])
+                if result == "Weak password":
+                    entry1.delete(0, "end")
+                    entry1.insert(0, "Username")
+                    entry2.delete(0, "end")
+                    entry2.insert(0, "Password")
+                else:
+                    entry1.place_forget()
+                    entry2.place_forget()
+                    button.place_forget()
+                    labels[i].place(x=5, y=5)
+                    buttons_get[i].place(x=210, y=1)
+                    buttons_edit[i].place(x=90, y=1)
 
-        def edit_password(website):
-            top_pixel, bottom_pixel = get_visible_y_values(edit_password_canvas)
-            place_y = ((top_pixel + bottom_pixel) / 2) - 75
-            login_info_frame = Frame(
-                edit_password_canvas, width=120, height=130, bg="#243f57"
+            edit_user = Entry(frames[i])
+            edit_user.insert(0, "Username")
+            edit_user.bind(
+                "<Button-1>", lambda event, entry=edit_user: clear(event, entry)
             )
-
-            def change_button_click():
-                edit_login(website, new_username_entry.get(), new_password_entry.get())
-                edit_password_canvas.delete(id)
-
-            new_username_label = Label(
-                login_info_frame,
-                text="New Username",
-                font=("arial", 11),
-                bg="#243f57",
-                foreground="white",
+            edit_user.place(x=5, y=6)
+            edit_pass = Entry(frames[i])
+            edit_pass.insert(0, "Password")
+            edit_pass.bind(
+                "<Button-1>", lambda event, entry=edit_pass: clear(event, entry)
             )
-            new_username_label.place(x=8, y=0)
-            new_username_entry = Entry(login_info_frame, width=16)
-            new_username_entry.place(x=10, y=25)
-            new_password_label = Label(
-                login_info_frame,
-                text="New Password",
-                font=("arial", 11),
-                bg="#243f57",
-                foreground="white",
-            )
-            new_password_label.place(x=8, y=45)
-            new_password_entry = Entry(login_info_frame, width=16)
-            new_password_entry.place(x=10, y=70)
-            change_button = Button(
-                login_info_frame,
-                text="Change",
-                relief=FLAT,
-                width=10,
-                bg="#243f57",
-                foreground="white",
-                command=change_button_click,
-                font=button_font_1,
-                activebackground="#3d5569",
-                activeforeground="white",
-            )
-            change_button.bind(
-                "<Enter>",
-                lambda event: button_color(event, change_button, "#3d5569"),
-            )
-            change_button.bind(
-                "<Leave>",
-                lambda event: button_color(event, change_button, "#243f57"),
-            )
-            change_button.place(x=10, y=95)
-            id = edit_password_canvas.create_window(
-                185, place_y, window=login_info_frame
-            )
-
-        for website in websites:
-            i = websites.index(website)
-            website_frame = Frame(
-                edit_password_canvas, width=330, height=35, bg="#0c2a44"
-            )
-            frames.append(website_frame)
-            website_label = Label(
+            edit_pass.place(x=135, y=6)
+            submit_button = Button(
                 frames[i],
-                text=website,
-                font=button_font_1,
-                bg="#0c2a44",
+                text="Submit",
+                background="#0c2a44",
                 foreground="white",
-            )
-            website_label.place(x=5, y=5)
-            get_password_button = Button(
-                website_frame,
-                text="Edit Password",
                 relief=FLAT,
-                width=13,
-                height=1,
-                bg="#0c2a44",
-                foreground="white",
-                command=lambda website=website: edit_password(website[0]),
-                font=button_font_1,
                 activebackground="#243f57",
-                activeforeground="white",
             )
-            buttons.append(get_password_button)
-            buttons[i].bind(
+            submit_button.configure(
+                command=lambda entry1=edit_user, entry2=edit_pass, button=submit_button: submit_button_click(
+                    entry1, entry2, button
+                )
+            )
+            submit_button.bind(
                 "<Enter>",
-                lambda event, i=i: button_color(event, buttons[i], "#243f57"),
+                lambda event, close_button=submit_button: button_color(
+                    event, close_button, "#243f57"
+                ),
             )
-            buttons[i].bind(
+            submit_button.bind(
                 "<Leave>",
-                lambda event, i=i: button_color(event, buttons[i], "#0c2a44"),
+                lambda event, close_button=submit_button: button_color(
+                    event, close_button, "#0c2a44"
+                ),
             )
-            buttons[i].place(x=200, y=1)
-            edit_password_canvas.create_window(185, y, window=frames[i])
-            y += 50
-        edit_password_canvas.update_idletasks()
+            submit_button.place(x=270, y=4)
+
+        no_password.place_forget()
+        if type(websites) == list:
+            for website in websites:
+                i = websites.index(website)
+                website_frame = Frame(
+                    password_canvas, width=330, height=35, bg="#0c2a44"
+                )
+                frames.append(website_frame)
+                website_label = Label(
+                    frames[i],
+                    text=website,
+                    font=button_font_1,
+                    bg="#0c2a44",
+                    foreground="white",
+                )
+                labels.append(website_label)
+                labels[i].place(x=5, y=5)
+                get_password_button = Button(
+                    website_frame,
+                    text="Get Password",
+                    relief=FLAT,
+                    width=12,
+                    height=1,
+                    bg="#0c2a44",
+                    foreground="white",
+                    command=lambda website=website, i=i: get_password(website[0], i),
+                    font=button_font_1,
+                    activebackground="#243f57",
+                    activeforeground="white",
+                )
+                buttons_get.append(get_password_button)
+                buttons_get[i].bind(
+                    "<Enter>",
+                    lambda event, i=i: button_color(event, buttons_get[i], "#243f57"),
+                )
+                buttons_get[i].bind(
+                    "<Leave>",
+                    lambda event, i=i: button_color(event, buttons_get[i], "#0c2a44"),
+                )
+                buttons_get[i].place(x=210, y=1)
+                edit_password_button = Button(
+                    website_frame,
+                    text="Edit Password",
+                    relief=FLAT,
+                    width=12,
+                    height=1,
+                    bg="#0c2a44",
+                    foreground="white",
+                    command=lambda website=website, i=i: edit_password(website[0], i),
+                    font=button_font_1,
+                    activebackground="#243f57",
+                    activeforeground="white",
+                )
+                buttons_edit.append(edit_password_button)
+                buttons_edit[i].bind(
+                    "<Enter>",
+                    lambda event, i=i: button_color(event, buttons_edit[i], "#243f57"),
+                )
+                buttons_edit[i].bind(
+                    "<Leave>",
+                    lambda event, i=i: button_color(event, buttons_edit[i], "#0c2a44"),
+                )
+                buttons_edit[i].place(x=90, y=1)
+                password_canvas.create_window(185, y, window=frames[i])
+                y += 50
+        else:
+            no_password.place(x=60, y=100)
+        password_canvas.update_idletasks()
         y -= 20
-        edit_password_canvas.after_idle(
-            lambda: edit_password_canvas.config(scrollregion=(0, 0, 330, y))
+        password_canvas.after_idle(
+            lambda: password_canvas.config(scrollregion=(0, 0, 330, y))
         )
-        edit_password_canvas.bind_all("<MouseWheel>", on_scroll)
-        edit_password_canvas.pack()
+        password_canvas.bind_all("<MouseWheel>", on_scroll)
+        password_canvas.pack()
     else:
-        edit_password_canvas.pack_forget()
+        password_canvas.pack_forget()
 
 
 button_font_1 = ("Arial", 12)
@@ -817,42 +779,24 @@ add_password_button.bind(
     "<Leave>", lambda event: button_color(event, add_password_button, "#243f57")
 )
 add_password_button.place(x=9, y=5)
-get_login_button = Button(
+password_button = Button(
     side_bar,
-    text="Get Password",
+    text="Passwords",
     relief=FLAT,
     width=12,
     bg="#243f57",
     foreground="white",
-    command=get_password_1,
+    command=passwords,
     font=button_font_1,
 )
-get_login_button.configure(activebackground="#3d5569", activeforeground="white")
-get_login_button.bind(
-    "<Enter>", lambda event: button_color(event, get_login_button, "#3d5569")
+password_button.configure(activebackground="#3d5569", activeforeground="white")
+password_button.bind(
+    "<Enter>", lambda event: button_color(event, password_button, "#3d5569")
 )
-get_login_button.bind(
-    "<Leave>", lambda event: button_color(event, get_login_button, "#243f57")
+password_button.bind(
+    "<Leave>", lambda event: button_color(event, password_button, "#243f57")
 )
-get_login_button.place(x=9, y=55)
-edit_login_button = Button(
-    side_bar,
-    text="Edit Password",
-    relief=FLAT,
-    width=12,
-    bg="#243f57",
-    foreground="white",
-    command=edit_password_1,
-    font=button_font_1,
-)
-edit_login_button.configure(activebackground="#3d5569", activeforeground="white")
-edit_login_button.bind(
-    "<Enter>", lambda event: button_color(event, edit_login_button, "#3d5569")
-)
-edit_login_button.bind(
-    "<Leave>", lambda event: button_color(event, edit_login_button, "#243f57")
-)
-edit_login_button.place(x=9, y=105)
+password_button.place(x=9, y=50)
 side_bar.pack(side=LEFT)
 
 add_password_page = Frame(frame, width=365, height=265, bg="#3d5569")
@@ -980,7 +924,7 @@ generated_password = Label(
     font=("arial", 10),
 )
 
-get_password_canvas = Canvas(
+password_canvas = Canvas(
     frame,
     width=365,
     height=265,
@@ -988,14 +932,14 @@ get_password_canvas = Canvas(
     borderwidth=0,
     highlightthickness=0,
 )
-
-edit_password_canvas = Canvas(
-    frame,
-    width=365,
-    height=265,
-    bg="#3d5569",
-    borderwidth=0,
-    highlightthickness=0,
+no_password = Frame(password_canvas, width=250, height=40, bg="#0c2a44")
+no_password_label = Label(
+    no_password,
+    text="You have no passwords saved",
+    bg="#0c2a44",
+    font=(("arial"), 13),
+    foreground=("white"),
 )
+no_password_label.place(x=10, y=7)
 
 window.mainloop()

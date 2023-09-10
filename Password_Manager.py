@@ -261,7 +261,7 @@ def get_websites():
     if websites:
         return websites
     else:
-        return ["No Websites"]
+        return "No websites"
 
 
 def get_login(website, password=""):
@@ -284,14 +284,7 @@ def get_login(website, password=""):
     con.close()
     decipher = AES.new(key, AES.MODE_CBC, iv=iv)
     password = unpad((decipher.decrypt(password)), AES.block_size).decode()
-    if len(username) > 3 and len(password) > 3:
-        return "Username: \n" + username + "\nPassword: \n" + password
-    elif len(username) > 3:
-        return "Username: \n" + username + "\nPassword: " + password
-    elif len(password) > 3:
-        return "Username: " + username + "\nPassword: \n" + password
-    else:
-        return "Username: " + username + "\nPassword: " + password
+    return f"Username: {username}    Password: {password}"
 
 
 def edit_login(website, username, password):
