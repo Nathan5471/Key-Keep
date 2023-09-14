@@ -111,18 +111,18 @@ def go_add():
         add_password_page.pack_forget()
 
 
-def change_username_1():
+def change_username_1(event=None):
     change_username(change_username_entry.get())
     username_button.configure(text=change_username_entry.get())
     account_management_dropdown()
 
 
-def change_password_1():
+def change_password_1(event=None):
     change_password(change_password_entry.get())
     account_management_dropdown()
 
 
-def create_account_1():
+def create_account_1(event=None):
     result = create_account(username_box_create.get(), password_box_create.get())
     if result == "Succes":
         window.geometry("500x300")
@@ -144,7 +144,7 @@ def create_account_1():
         error_page_1.place(x=20, y=60)
 
 
-def login_1():
+def login_1(event=None):
     result = login(username_box_login.get(), password_box_login.get())
     if result == "Succes":
         window.geometry("500x300")
@@ -167,7 +167,7 @@ def login_1():
         error_page_2.place(x=20, y=60)
 
 
-def add_password():
+def add_password(event=None):
     result = generate_login(website_entry.get(), user_entry.get(), pass_entry.get())
     if result == "Succes":
         website_entry.delete(0, "end")
@@ -212,7 +212,7 @@ def add_password():
         error_page.place(x=90, y=50)
 
 
-def generate_password_1():
+def generate_password_1(event=None):
     length = password_len.get()
     if length.isdigit():
         if int(password_len.get()) >= 12 and int(password_len.get()) <= 36:
@@ -298,7 +298,7 @@ def passwords():
                 if entry.get() == "Username" or entry.get() == "Password":
                     entry.delete(0, "end")
 
-            def submit_button_click(entry1, entry2, button):
+            def submit_button_click(entry1, entry2, button, event=None):
                 new_info = (entry1.get(), entry2.get())
                 result = edit_login(website, new_info[0], new_info[1])
                 if result == "Weak password":
@@ -336,7 +336,7 @@ def passwords():
             )
             submit_button.configure(
                 command=lambda entry1=edit_user, entry2=edit_pass, button=submit_button: submit_button_click(
-                    entry1, entry2, button
+                    entry1=entry1, entry2=entry2, button=button
                 )
             )
             submit_button.bind(
@@ -349,6 +349,18 @@ def passwords():
                 "<Leave>",
                 lambda event, close_button=submit_button: button_color(
                     event, close_button, "#0c2a44"
+                ),
+            )
+            edit_user.bind(
+                "<Return>",
+                lambda event, entry1=edit_user, entry2=edit_pass, button=submit_button: submit_button_click(
+                    event=event, entry1=entry1, entry2=entry2, button=button
+                ),
+            )
+            edit_pass.bind(
+                "<Return>",
+                lambda event, entry1=edit_user, entry2=edit_pass, button=submit_button: submit_button_click(
+                    event=event, entry1=entry1, entry2=entry2, button=button
                 ),
             )
             submit_button.place(x=270, y=4)
@@ -514,6 +526,8 @@ create_account_submit.bind(
 create_account_submit.bind(
     "<Leave>", lambda event: button_color(event, create_account_submit, "#0c2a44")
 )
+username_box_create.bind("<Return>", create_account_1)
+password_box_create.bind("<Return>", create_account_1)
 create_account_submit.place(x=8, y=160)
 
 password_requirements_label = Label(
@@ -604,6 +618,8 @@ login_submit = Button(
 login_submit.configure(activebackground="#243f57", activeforeground="white")
 login_submit.bind("<Enter>", lambda event: button_color(event, login_submit, "#243f57"))
 login_submit.bind("<Leave>", lambda event: button_color(event, login_submit, "#0c2a44"))
+username_box_login.bind("<Return>", login_1)
+password_box_login.bind("<Return>", login_1)
 login_submit.place(x=8, y=160)
 
 error_page_2 = Frame(login_page, width=125, height=120, bg="#243f57")
@@ -734,6 +750,7 @@ change_username_submit.bind(
 change_username_submit.bind(
     "<Leave>", lambda event: button_color(event, change_username_submit, "#0a2236")
 )
+change_username_entry.bind("<Return>", change_username_1)
 change_password_label = Label(
     account_dropdown,
     text="New Password",
@@ -759,6 +776,7 @@ change_password_submit.bind(
 change_password_submit.bind(
     "<Leave>", lambda event: button_color(event, change_password_submit, "#0a2236")
 )
+change_password_entry.bind("<Return>", change_password_1)
 
 side_bar = Frame(frame, width=135, height=265, bg="#243f57")
 add_password_button = Button(
@@ -847,6 +865,9 @@ new_pass_submit.bind(
 new_pass_submit.bind(
     "<Leave>", lambda event: button_color(event, new_pass_submit, "#3d5569")
 )
+website_entry.bind("<Return>", add_password)
+user_entry.bind("<Return>", add_password)
+pass_entry.bind("<Return>", add_password)
 new_pass_submit.place(x=10, y=185)
 password_recommendations = Label(
     add_password_page,
@@ -915,6 +936,7 @@ gen_password = Button(
 gen_password.configure(activebackground="#506579", activeforeground="white")
 gen_password.bind("<Enter>", lambda event: button_color(event, gen_password, "#506579"))
 gen_password.bind("<Leave>", lambda event: button_color(event, gen_password, "#3d5569"))
+password_len.bind("<Return>", generate_password_1)
 gen_password.place(x=160, y=200)
 generated_password = Label(
     add_password_page,
